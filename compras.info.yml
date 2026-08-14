@@ -1,0 +1,5 @@
+name: 'Compras'
+type: module
+description: 'Gera DFD'
+core: 8.x
+core_version_requirement: ^8 || ^9 || ^10 ||  ^11 ||  ^12
