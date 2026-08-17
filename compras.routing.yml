@@ -1,0 +1,34 @@
+compras.create_compras:
+  path: '/compras/create'
+  defaults:
+    _title: 'Create Compras'
+    _form: 'Drupal\compras\Form\ComprasForm'
+  requirements:
+    _permission: 'access content'
+
+
+compras.index:
+  path: '/compras'
+  defaults:
+    _controller: '\Drupal\compras\Controller\ComprasController::index'
+    _title: 'Lista de Compras'
+  requirements:
+    _permission: 'access content'
+
+
+compras.delete:
+  path: '/compras/{id}/delete'
+  defaults:
+    _controller: '\Drupal\compras\Controller\ComprasController::delete'
+    _title: 'Apagar Compra'
+  requirements:
+    _permission: 'access content'
+
+
+compras.edit_compras:
+  path: '/compras/{id}/edit'
+  defaults:
+    _title: 'Edit Compras'
+    _form: 'Drupal\compras\Form\EditComprasForm'
+  requirements:
+    _permission: 'access content'

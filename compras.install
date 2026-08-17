@@ -1,0 +1,36 @@
+<?php
+
+function compras_schema() {
+  $schema['compras'] = [
+    'description' => 'Número da Contratação',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'numero' => [
+        'type' => 'text',
+        'not null' => TRUE,
+      ],
+      'numerodfd' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Cria a tabela compras para instalações que não possuem o schema registrado.
+ */
+function compras_update_10001() {
+  $schema = \Drupal::database()->schema();
+
+  if (!$schema->tableExists('compras')) {
+    $schema->createTable('compras', compras_schema()['compras']);
+  }
+}
