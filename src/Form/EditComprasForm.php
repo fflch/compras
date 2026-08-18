@@ -37,7 +37,7 @@ final class EditComprasForm extends FormBase {
 
     $form['numero'] = [
       '#type' => 'textarea',
-      '#title' => 'Número',
+      '#title' => 'Número da contratação',
       '#required' => TRUE,
       '#default_value' => $compra->numero,
     ];
@@ -68,7 +68,7 @@ final class EditComprasForm extends FormBase {
       ->condition('id', $form_state->getValue('id'))
       ->execute();
 
-    \Drupal::messenger()->addMessage('Compra atualizada com sucesso!');
+    \Drupal::messenger()->addMessage('Alteração realizada com sucesso.');
   }
 
   /**

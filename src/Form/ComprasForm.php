@@ -61,7 +61,7 @@ final class ComprasForm extends FormBase {
       ])
       ->execute();
 
-    \Drupal::messenger()->addMessage('Compra salva com sucesso!');
+    \Drupal::messenger()->addMessage('Alteração salva com sucesso.');
   }
 
 }
