@@ -1,0 +1,7 @@
+compras.csv:
+  path: '/compras/csv'
+  defaults:
+    _title: 'Csv'
+    _form: 'Drupal\compras\Form\CsvForm'
+  requirements:
+    _permission: 'authenticated'
