@@ -6,6 +6,7 @@ namespace Drupal\compras\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Database\Database;
 
 /**
  * Provides a Compras form.
@@ -47,13 +48,16 @@ final class CsvForm extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $all_files = \Drupal::request()->files->get('files', []);
-    
+
     if (!empty($all_files['csv_file'])) {
       /** @var \Symfony\Component\HttpFoundation\File\UploadedFile $file */
       $file = $all_files['csv_file'];
-      
+
       if ($file->getClientOriginalExtension() !== 'csv') {
-        $form_state->setErrorByName('csv_file', $this->t('O arquivo precisa ser um CSV válido.'));
+        $form_state->setErrorByName(
+          'csv_file',
+          $this->t('O arquivo precisa ser um CSV válido.')
+        );
       }
     }
   }
@@ -63,20 +67,83 @@ final class CsvForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $all_files = \Drupal::request()->files->get('files', []);
-    
+
     if (!empty($all_files['csv_file'])) {
       /** @var \Symfony\Component\HttpFoundation\File\UploadedFile $file */
       $file = $all_files['csv_file'];
-      
-      // Lê todo o conteúdo do arquivo temporário para uma string
-      $csv_content = file_get_contents($file->getRealPath());
 
-      // $csv_content agora contém o texto puro do CSV
-      dd($csv_content);
+      $handle = fopen($file->getRealPath(), 'r');
+
+      if ($handle !== FALSE) {
+
+        // Lê a primeira linha para descobrir o separador.
+        $primeira_linha = fgets($handle);
+
+        if ($primeira_linha !== FALSE) {
+          if (str_contains($primeira_linha, '|')) {
+            $delimitador = '|';
+          }
+          elseif (str_contains($primeira_linha, ';')) {
+            $delimitador = ';';
+          }
+          else {
+            $delimitador = ',';
+          }
+        }
+        else {
+          $delimitador = ',';
+        }
+
+        // Volta para o início do arquivo.
+        rewind($handle);
+
+        // Lê o cabeçalho.
+        $cabecalho = fgetcsv($handle, 0, $delimitador);
+
+        // Lê cada linha do CSV.
+        $linhas = [];
+        while (($linha = fgetcsv($handle, 0, $delimitador)) !== FALSE) {
+          $linhas[] = $linha;
+        }
+        $database = Database::getConnection();
+        foreach ($linhas as $linha) {
+          $numero_contratacao = trim($linha[0]);
+          $no_dfd = trim($linha[1]);
+
+  // Verifica se a informação já existe.
+          $existe = $database->select('compras_lista', 'c')
+            ->fields('c', ['id'])
+            ->condition('numero_contratacao', $numero_contratacao)
+            ->condition('no_dfd', $no_dfd)
+            ->execute()
+            ->fetchField();
+            
+          if ($existe) {
+            $this->messenger()->addWarning(
+              $this->t(
+                'Informação já existente no banco: @numero - @dfd. Uma nova entrada será adicionada.',
+                [
+                  '@numero' => $numero_contratacao,
+                  '@dfd' => $no_dfd,
+                ]
+              )
+          );
+        }
+   // Salva a informação independentemente de ela já existir.
+        $database->insert('compras_lista')
+        ->fields([
+          'numero_contratacao' => $numero_contratacao,
+          'no_dfd' => $no_dfd,
+        ])
+        ->execute();
     }
 
-    $this->messenger()->addStatus($this->t('The message has been sent.'));
-    $form_state->setRedirect('<front>');
-  }
+        fclose($handle);
+      }
+    }
 
+    $this->messenger()->addStatus(
+      $this->t('CSV importado com sucesso.')
+    );
+  }
 }
