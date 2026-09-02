@@ -1,0 +1,52 @@
+<?php
+
+function compras_schema() {
+  $schema['compras_lista'] = [
+    'description' => 'Lista de informações importadas pelo módulo Compras.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'numero_contratacao' => [
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ],
+      'no_dfd' => [
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  return $schema;
+}
+
+function compras_update_10001() {
+  $schema = \Drupal::database()->schema();
+
+  if (!$schema->tableExists('compras_lista')) {
+    $schema->createTable('compras_lista', [
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'not null' => TRUE,
+        ],
+        'numero_contratacao' => [
+          'type' => 'varchar',
+          'length' => 100,
+          'not null' => TRUE,
+        ],
+        'no_dfd' => [
+          'type' => 'varchar',
+          'length' => 100,
+          'not null' => TRUE,
+        ],
+      ],
+      'primary key' => ['id'],
+    ]);
+  }
+}

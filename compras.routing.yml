@@ -5,3 +5,11 @@ compras.csv:
     _form: 'Drupal\compras\Form\CsvForm'
   requirements:
     _permission: 'authenticated'
+
+compras.lista:
+  path: '/compras/lista'
+  defaults:
+    _title: 'Lista'
+    _controller: '\Drupal\compras\Controller\ComprasController::lista'
+  requirements:
+    _permission: 'authenticated'
