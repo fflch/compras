@@ -1,52 +1,179 @@
 <?php
 
+/**
+ * @file
+ * Funções de instalação, atualização e esquema para o módulo Compras.
+ */
+
+/**
+ * Implements hook_schema().
+ */
 function compras_schema() {
   $schema['compras_lista'] = [
     'description' => 'Lista de informações importadas pelo módulo Compras.',
     'fields' => [
       'id' => [
+        'description' => 'Chave primária autoincrementável.',
         'type' => 'serial',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ],
       'numero_contratacao' => [
+        'description' => 'Número da contratação (ex: 5/2027).',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'status_contratacao' => [
+        'description' => 'Status da contratação (ex: Aprovada).',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'situacao_execucao' => [
+        'description' => 'Situação da Execução.',
         'type' => 'varchar',
         'length' => 100,
-        'not null' => TRUE,
+        'not null' => FALSE,
+      ],
+      'titulo_contratacao' => [
+        'description' => 'Título da contratação.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+      'categoria_contratacao' => [
+        'description' => 'Categoria da contratação (ex: BENS, SERVICOS).',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'uasg_atual' => [
+        'description' => 'UASG Atual.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+      ],
+      'data_estimada_inicio' => [
+        'description' => 'Data estimada para o início do processo de contratação.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+      ],
+      'data_estimada_conclusao' => [
+        'description' => 'Data estimada para a conclusão do processo de contratação.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+      ],
+      'prazo_estimado_dias' => [
+        'description' => 'Prazo estimado de duração do processo de contratação em dias.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ],
+      'area_requisitante' => [
+        'description' => 'Área requisitante.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
       ],
       'no_dfd' => [
+        'description' => 'Nº DFD (ex: 245/2026).',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'prioridade' => [
+        'description' => 'Prioridade (ex: Médio, Alto).',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'numero_item_dfd' => [
+        'description' => 'Nº do Item no DFD.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ],
+      'data_conclusao_dfd' => [
+        'description' => 'Data da conclusão da Contratação no DFD.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+      ],
+      'classificacao_contratacao' => [
+        'description' => 'Classificação da Contratação (ex: Material).',
         'type' => 'varchar',
         'length' => 100,
-        'not null' => TRUE,
+        'not null' => FALSE,
+      ],
+      'codigo_classe_grupo' => [
+        'description' => 'Código Classe/Grupo.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'nome_classe_grupo' => [
+        'description' => 'Nome Classe/Grupo.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+      'codigo_pdm_material' => [
+        'description' => 'Código PDM material.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'nome_pdm_material' => [
+        'description' => 'Nome do PDM material.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ],
+      'codigo_material_servico' => [
+        'description' => 'Código material/serviço.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+      ],
+      'descricao_material_servico' => [
+        'description' => 'Descrição material/serviço.',
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => FALSE,
+      ],
+      'unidade_fornecimento' => [
+        'description' => 'Unidade Fornecimento (ex: UN).',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+      ],
+      'valor_unitario' => [
+        'description' => 'Valor Unitário.',
+        'type' => 'numeric',
+        'precision' => 15,
+        'scale' => 4,
+        'not null' => FALSE,
+      ],
+      'quantidade' => [
+        'description' => 'Quantidade.',
+        'type' => 'numeric',
+        'precision' => 15,
+        'scale' => 5,
+        'not null' => FALSE,
+      ],
+      'valor_total' => [
+        'description' => 'Valor Total.',
+        'type' => 'numeric',
+        'precision' => 15,
+        'scale' => 4,
+        'not null' => FALSE,
       ],
     ],
     'primary key' => ['id'],
   ];
 
   return $schema;
-}
-
-function compras_update_10001() {
-  $schema = \Drupal::database()->schema();
-
-  if (!$schema->tableExists('compras_lista')) {
-    $schema->createTable('compras_lista', [
-      'fields' => [
-        'id' => [
-          'type' => 'serial',
-          'not null' => TRUE,
-        ],
-        'numero_contratacao' => [
-          'type' => 'varchar',
-          'length' => 100,
-          'not null' => TRUE,
-        ],
-        'no_dfd' => [
-          'type' => 'varchar',
-          'length' => 100,
-          'not null' => TRUE,
-        ],
-      ],
-      'primary key' => ['id'],
-    ]);
-  }
 }
