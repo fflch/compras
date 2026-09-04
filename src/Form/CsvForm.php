@@ -8,7 +8,6 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Database\Database;
 use League\Csv\CharsetConverter;
-
 use League\Csv\Reader;
 
 /**
@@ -16,7 +15,7 @@ use League\Csv\Reader;
  */
 final class CsvForm extends FormBase {
 
-/**
+  /**
    * Mapeamento do cabeçalho do CSV para o nome do campo no banco de dados.
    */
   protected const MAPEAMENTO_COLUNAS = [
@@ -46,6 +45,7 @@ final class CsvForm extends FormBase {
     'Quantidade' => 'quantidade',
     'Valor Total' => 'valor_total',
   ];
+
   /**
    * {@inheritdoc}
    */
@@ -103,8 +103,12 @@ final class CsvForm extends FormBase {
 
         $csv->setHeaderOffset(0);
 
-        // Obtém e limpa o cabeçalho do CSV enviado
-        $cabecalho = array_map('trim', $csv->getHeader());
+        // Obtém o cabeçalho e remove trim, aspas e o caractere invisível BOM (\x{FEFF})
+        $cabecalho = array_map(function ($coluna) {
+          $coluna_limpa = preg_replace('/[\x{FEFF}]/u', '', $coluna);
+          return trim($coluna_limpa);
+        }, $csv->getHeader());
+
         $colunas_esperadas = array_keys(self::MAPEAMENTO_COLUNAS);
 
         // Verifica quais colunas obrigatórias estão faltando
@@ -168,6 +172,10 @@ final class CsvForm extends FormBase {
       }
 
       $database = Database::getConnection();
+
+      // Garante que a tabela exista antes de rodar qualquer consulta
+      $this->garantirTabelaExiste($database);
+
       $transaction = $database->startTransaction();
 
       try {
@@ -254,6 +262,52 @@ final class CsvForm extends FormBase {
   }
 
   /**
+   * Garante que a tabela compras_lista exista no banco de dados.
+   */
+  private function garantirTabelaExiste($database): void {
+    if (!$database->schema()->tableExists('compras_lista')) {
+      $schema = [
+        'description' => 'Tabela para armazenar os registros de compras do CSV.',
+        'fields' => [
+          'id' => [
+            'type' => 'serial',
+            'unsigned' => TRUE,
+            'not null' => TRUE,
+          ],
+          'numero_contratacao'         => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'status_contratacao'         => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'situacao_execucao'          => ['type' => 'text', 'not null' => FALSE],
+          'titulo_contratacao'         => ['type' => 'text', 'not null' => FALSE],
+          'categoria_contratacao'      => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'uasg_atual'                 => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'data_estimada_inicio'       => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'data_estimada_conclusao'    => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'prazo_estimado_dias'        => ['type' => 'int', 'not null' => FALSE],
+          'area_requisitante'          => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'no_dfd'                     => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'prioridade'                 => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'numero_item_dfd'            => ['type' => 'int', 'not null' => FALSE],
+          'data_conclusao_dfd'         => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'classificacao_contratacao'  => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'codigo_classe_grupo'        => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'nome_classe_grupo'          => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'codigo_pdm_material'        => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'nome_pdm_material'          => ['type' => 'text', 'not null' => FALSE],
+          'codigo_material_servico'    => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'descricao_material_servico' => ['type' => 'text', 'not null' => FALSE],
+          'unidade_fornecimento'       => ['type' => 'varchar', 'length' => 255, 'not null' => FALSE],
+          'valor_unitario'             => ['type' => 'numeric', 'precision' => 15, 'scale' => 4, 'not null' => FALSE],
+          'quantidade'                 => ['type' => 'numeric', 'precision' => 15, 'scale' => 4, 'not null' => FALSE],
+          'valor_total'                => ['type' => 'numeric', 'precision' => 15, 'scale' => 4, 'not null' => FALSE],
+        ],
+        'primary key' => ['id'],
+      ];
+
+      $database->schema()->createTable('compras_lista', $schema);
+    }
+  }
+
+  /**
    * Detecta se o separador do CSV é ';', '|' ou ','.
    */
   private function detectarDelimitador(string $filepath): string {
@@ -317,14 +371,9 @@ final class CsvForm extends FormBase {
     // Detecta a codificação atual do arquivo
     $encoding = mb_detect_encoding($conteudo, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], TRUE);
 
-    // Se não for UTF-8 (ou for ISO-8859-1 / Windows-1252), aplica a conversão
-    if ($encoding !== 'UTF-8') {
-      $converter = (new CharsetConverter())
-        ->inputEncoding($encoding ?: 'ISO-8859-1')
-        ->outputEncoding('UTF-8');
-
-      // Aplica o conversor de charset no leitor do CSV
-      $csv->addFormatter($converter);
+    // Se não for UTF-8, aplica a conversão do charset
+    if ($encoding && $encoding !== 'UTF-8') {
+      CharsetConverter::addTo($csv, $encoding, 'UTF-8');
     }
 
     return $csv;
